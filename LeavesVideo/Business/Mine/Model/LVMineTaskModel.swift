@@ -1,0 +1,32 @@
+//
+//  LVMineTaskModel.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/30.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import Foundation
+import HandyJSON
+struct LVMineTaskItem: HandyJSON {
+    var completed = false
+    var rewardName = ""
+    var rewardValue = 2
+    var taskIcon = ""
+    var taskName = ""
+    var taskType = 2
+    init() {
+        
+    }
+}
+class LVMineTaskModel: BaseNetworkService,GetListNetworkProtocol{
+    override func setRequestUrl() -> String {
+        return "user/task"
+    }
+    override func setRequestBody() -> [String : Any] {
+        return [:]
+    }
+    
+    
+}
+

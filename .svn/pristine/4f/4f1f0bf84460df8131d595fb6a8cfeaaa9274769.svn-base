@@ -1,0 +1,82 @@
+//
+//  UIImage+ColorImage.swift
+//  Investment
+//
+//  Created by XD on 2018/9/5.
+//  Copyright © 2018年 方加会. All rights reserved.
+//
+
+import Foundation
+import UIKit
+extension UIImage{
+    /**
+     UIcolor转图片
+     */
+    class func createImageWithColor(color:UIColor)->UIImage{
+        let rect = CGRect.init(x: 0, y: 0, width: kScreenWidth, height: 17)
+        UIGraphicsBeginImageContext(rect.size);
+        let context = UIGraphicsGetCurrentContext();
+        context!.setFillColor(color.cgColor);
+        context!.fill(rect);
+        let theImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        return theImage!;
+    }
+    /**
+     渐变色转图片
+     */
+    class func createGradientImage(frame:CGRect,colors:Array<UIColor>,locations:Array<NSNumber>)->UIImage {
+        let gradientLayer: CAGradientLayer = CAGradientLayer()
+        gradientLayer.frame = frame
+        //设置渐变的主颜色
+        gradientLayer.colors = colors
+        //定义每种颜色所在的位置
+        gradientLayer.locations = locations
+        gradientLayer.startPoint = CGPoint.init(x: 0, y: 0)
+        gradientLayer.endPoint = CGPoint.init(x: 1, y: 0)
+        let rect = CGRect.init(x: 0, y: 0, width: frame.width, height: frame.height)
+        UIGraphicsBeginImageContext(rect.size);
+        let context = UIGraphicsGetCurrentContext();
+        gradientLayer.render(in: context!)
+        let theImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        return theImage!;
+    }
+    /**
+     两张图片合成一张
+     在image底部拼接图片，形成新的图片
+     */
+    func appendImageAtBottom(image:UIImage)->UIImage{
+        
+        let size = CGSize(width: self.size.width, height: self.size.height + image.size.height)
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, UIScreen.main.scale)
+        
+        self.draw(in: CGRect(x:0, y:0, width:size.width, height:self.size.height))
+        
+        image.draw(in: CGRect(x:0, y:self.size.height, width:self.size.width, height:image.size.height));
+        
+        let newImage:UIImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        
+        return newImage
+    }
+    /**
+     两张图片合成一张，
+     在底部覆盖
+     */
+    func coverImageAtBottom(image: UIImage, headerHeight: CGFloat, bottomOrignX: CGFloat , extraHeight:CGFloat)-> UIImage{
+        let size = CGSize(width: self.size.width, height: headerHeight + image.size.height + extraHeight)
+        UIGraphicsBeginImageContextWithOptions(size, false, UIScreen.main.scale)
+        
+        self.draw(in: CGRect(x:0, y:0, width:size.width, height:self.size.height))
+        
+        image.draw(in: CGRect(x:0, y:size.height - image.size.height , width:self.size.width, height:image.size.height));
+        
+        let newImage:UIImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        
+        return newImage
+    }
+    
+}

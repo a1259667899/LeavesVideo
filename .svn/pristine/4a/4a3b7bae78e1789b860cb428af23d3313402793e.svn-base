@@ -1,0 +1,96 @@
+//
+//  Appdelegate+private.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/23.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import Foundation
+import Mixpanel
+extension AppDelegate{
+    /**设置根视图控制器*/
+    func setRootViewController(){
+        self.window = UIWindow.init(frame: UIScreen.main.bounds)
+        self.window?.backgroundColor = UIColor(hexString: "#FFFFFF")
+        let HomeNV = RTRootNavigationController.init(rootViewController: LVHomeViewController())
+        HomeNV.tabBarItem.image = UIImage(named: "tab_home")?.withRenderingMode(.alwaysOriginal)
+        HomeNV.tabBarItem.selectedImage = UIImage(named: "tab_home_select")?.withRenderingMode(.alwaysOriginal)
+        HomeNV.tabBarItem.setTitleTextAttributes([NSAttributedString.Key.foregroundColor:UIColor(hexString: "#41BEFE")!], for: .selected)
+        HomeNV.tabBarItem.title = "首页"
+        let ClassfyNV = RTRootNavigationController.init(rootViewController: LVClassfyViewController())
+        ClassfyNV.tabBarItem.image = UIImage(named: "tab_classfy")?.withRenderingMode(.alwaysOriginal)
+        ClassfyNV.tabBarItem.selectedImage = UIImage(named: "tab_classfy_select")?.withRenderingMode(.alwaysOriginal)
+        ClassfyNV.tabBarItem.setTitleTextAttributes([NSAttributedString.Key.foregroundColor:UIColor(hexString: "#41BEFE")!], for: .selected)
+        ClassfyNV.tabBarItem.title = "分类"
+        let MineNV = RTRootNavigationController.init(rootViewController: LVMineViewController())
+        MineNV.tabBarItem.image = UIImage(named: "tab_mine")?.withRenderingMode(.alwaysOriginal)
+        MineNV.tabBarItem.selectedImage = UIImage(named: "tab_mine_select")?.withRenderingMode(.alwaysOriginal)
+        MineNV.tabBarItem.setTitleTextAttributes([NSAttributedString.Key.foregroundColor:UIColor(hexString: "#41BEFE")!], for: .selected)
+        MineNV.tabBarItem.title = "我的"
+        let tabBarController = LVTabBarController.init()
+        tabBarController.viewControllers = [HomeNV, ClassfyNV , MineNV]
+        self.window?.rootViewController = tabBarController
+        self.window?.makeKeyAndVisible()
+    }
+    func setupOptions(options:[UIApplication.LaunchOptionsKey: Any]?) {
+        WXApi.registerApp(WXAppId);
+        Mixpanel.initialize(token: MixpanelToken)
+    }
+    /**
+     获取当前语言区域
+     */
+    func getLanguageLocation(){
+        if UserDefaults.standard.bool(forKey: "appLanguage") == false{
+            let languages = Locale.preferredLanguages
+            let language = languages[0]
+            if language.hasPrefix("zh-Hans"){
+                UserDefaults.standard.set("zh-Hans", forKey: "appLanguage")
+            }else{
+                UserDefaults.standard.set("en", forKey: "appLanguage")
+            }
+        }
+    }
+    func setUPDownload(){
+        var path = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true).first! as NSString
+        path = path.appendingPathComponent("download") as NSString
+        
+        let config = YCDConfig.init()
+        config.uid = "100008"
+        config.maxTaskCount = 3
+        config.taskCachekMode = .keep
+        config.launchAutoResumeDownload = true
+        YCDownloadManager.mgr(with: config)
+    }
+    /**配置启动广告*/
+    func setUPLaunchAD(){
+        XHLaunchAd.setWaitDataDuration(3)
+        LVADUtil.loadADData { (response) in
+            let imageAdconfiguration = XHLaunchImageAdConfiguration.init()
+            imageAdconfiguration.duration = 1
+            imageAdconfiguration.frame = CGRect(x: 0, y: 0, width: kScreenWidth, height: kScreenHeight -  107 - kSafeAreaBottomH )
+            imageAdconfiguration.imageNameOrURLString = response.content
+            imageAdconfiguration.imageOption = .cacheInBackground
+            imageAdconfiguration.contentMode = .scaleAspectFit
+            imageAdconfiguration.openModel = response.link
+            imageAdconfiguration.showFinishAnimate = .fadein
+            imageAdconfiguration.showFinishAnimateTime = 0.3
+            imageAdconfiguration.skipButtonType = .timeText
+            imageAdconfiguration.showEnterForeground = false
+            imageAdconfiguration.subViews = [LVLaunchADBottomView.init(frame: CGRect.zero)]
+            XHLaunchAd.imageAd(with: imageAdconfiguration, delegate: self)
+        }
+    }
+    //设置后台下载回调
+    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
+        YCDownloader.downloader().addCompletionHandler(completionHandler, identifier: identifier)
+    }
+    
+    //MARK:- xhLaunchAd delegate
+    func xhLaunchAd(_ launchAd: XHLaunchAd, clickAndOpenModel openModel: Any, click clickPoint: CGPoint) {
+        let vc = WKWebViewViewController()
+        vc.url = openModel as! String
+        vc.hidesBottomBarWhenPushed = true
+        ViewControllerUtil.getCurrentViewController().navigationController?.pushViewController(vc, animated: true)
+    }
+}

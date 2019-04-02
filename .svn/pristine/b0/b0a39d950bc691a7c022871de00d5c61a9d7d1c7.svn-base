@@ -1,0 +1,13 @@
+//
+//  LVHomeMovieCollectionViewCell.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/11/7.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import UIKit
+
+class LVHomeMovieCollectionViewCell: UICollectionViewCell {
+    
+}

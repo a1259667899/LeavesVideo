@@ -1,0 +1,58 @@
+//
+//  LVHomeViewControllerViewModel.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/11/7.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import UIKit
+
+class LVHomeViewControllerViewModel {
+    private lazy var bannerItems:[LVHomeBannerModel] = {return []}()
+    private lazy var recommandItems:[LVHomeBannerModel] = {return []}()
+    private lazy var hotItems:[LVHomeBannerModel] = {return []}()
+    func loadData(){
+        let group = DispatchGroup.init()
+        let itemBanner = DispatchWorkItem.init {
+            self.loadBanner(successHandler: { (response) in
+                
+            }, failHandler: {
+                
+            })
+        }
+        let itemRecommand = DispatchWorkItem.init {
+            self.loadRecommandVideos(successHandler: { (response) in
+                
+            }, failHandler: {
+                
+            })
+        }
+        let itemHot = DispatchWorkItem.init {
+            self.loadHotVideos(successHandler: { (response) in
+                
+            }, failHandler: {
+                
+            })
+        }
+        DispatchQueue.main.async(group: group, execute: itemBanner)
+        DispatchQueue.main.async(group: group, execute: itemRecommand)
+        DispatchQueue.main.async(group: group, execute: itemHot)
+        group.notify(queue: DispatchQueue.main) {
+            //所所有请求都已经返回结果
+            
+        }
+    }
+    /**请求banner数据*/
+    private func loadBanner(successHandler:([LVHomeBannerModel])-> Void, failHandler:noneAttributeClosure){
+        
+    }
+    /**请求推荐电影*/
+    private func loadRecommandVideos(successHandler:([LVVideoListItem])-> Void, failHandler:noneAttributeClosure){
+        
+    }
+    /**请求热荐剧集*/
+    private func loadHotVideos(successHandler:([LVVideoListItem])-> Void, failHandler:noneAttributeClosure){
+        
+    }
+}

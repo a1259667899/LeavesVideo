@@ -1,0 +1,23 @@
+platform :ios, "9.0"
+targetArray = ['LeavesVideo' ,'LeavesVideoDev' ]
+targetArray.each do |t|
+target t do
+pod 'Alamofire'
+pod 'HandyJSON'
+pod 'XHLaunchAd'
+pod 'ZKProgressHUD'
+pod 'PullToRefreshKit'
+pod 'Kingfisher'
+pod 'SnapKit'
+pod 'SKPhotoBrowser'
+pod 'SwiftHEXColors'
+pod 'LTAutoScrollView'
+pod 'RTRootNavigationController'
+pod 'WebViewJavascriptBridge'
+pod 'WechatOpenSDK'
+pod 'IQKeyboardManagerSwift'
+pod 'DZNEmptyDataSet'
+end
+project 'LeavesVideo.xcodeproj'
+use_frameworks!
+end

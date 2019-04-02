@@ -1,0 +1,40 @@
+//
+//  LVVideoListItem.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/22.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import Foundation
+import HandyJSON
+class LVVideoListItem:NSObject,HandyJSON {
+    var duration = 0
+    var collectNum = ""
+    var playNum = ""
+    var videoIcon = ""
+    var videoId = "12"
+    var videoTitle = ""
+    var videoUrl = ""
+    var isCollect = false
+    required override init() {
+        
+    }
+    func dataWithModel()->Data{
+        let json = self.toJSONString()
+        return (json?.data(using: .utf8))!
+    }
+    class func modelWithData(data:Data)->LVVideoListItem{
+        let json = String.init(data: data, encoding: .utf8)
+        return LVVideoListItem.deserialize(from: json)!
+    }
+}
+class LVVideoListModel: BaseModel {
+    
+    override func setRequestUrl() -> String {
+        return ""
+    }
+    override func setRequestBody() -> [String : Any] {
+        return [:]
+    }
+}

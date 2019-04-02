@@ -1,0 +1,160 @@
+//
+//  ViewController.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/17.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import UIKit
+import PullToRefreshKit
+class LVHomeViewController: BaseViewController ,UITableViewDelegate , UITableViewDataSource{
+    private lazy var headerTitles:[String] = {
+        return ["","推荐电影","推荐剧集"]
+    }()
+    private lazy var bannerModel:LVHomeBannerService = {
+        let model = LVHomeBannerService()
+        return model
+    }()
+    private lazy var catagrayModel:LVVideoCatagrayRecommandModel = {
+        let model = LVVideoCatagrayRecommandModel()
+        return model
+    }()
+    private lazy var videoListModel:LVVideoRecommandListModel = {
+        let model = LVVideoRecommandListModel()
+        return model
+    }()
+    private lazy var videoDetail:LVVideoDetailModel = {
+        return LVVideoDetailModel()
+    }()
+    private var bannerList:[LVHomeBannerModel] = []
+    private var catagrayList:[LVCatagrayItem] = []
+    private var videoList:[LVVideoListItem] = []
+    private lazy var tableView:UITableView = {
+        let table = UITableView.init(frame: CGRect(x: 0, y: kStatusbarH, width: kScreenWidth, height: kScreenHeight - kStatusbarH), style: .plain)
+        table.showsHorizontalScrollIndicator = false
+        table.delegate = self
+        table.dataSource = self
+        table.separatorStyle = .none
+        return table
+    }()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.navigationController?.navigationBar.isHidden = true
+        self.addSubViews()
+        self.addUglyBoard()
+        self.tableView.configRefreshHeader(container: self) {[weak self] in
+            self!.loadData()
+        }
+        TBTHUD.showLoading()
+        self.loadData()
+        LVADUtil.showHomeAlertAD()
+    }
+    //添加顶部的遮丑板
+    private func addUglyBoard(){
+        let view = UIView.init(frame: CGRect.init(x: 0, y: 0, width: kScreenWidth, height: is_iPhoneX ? 44 : 20))
+        view.backgroundColor = UIColor.white
+        self.view.addSubview(view)
+    }
+    func addSubViews() {
+        self.view.addSubview(self.tableView)
+        self.tableView.registerCellWith(cellClazz: LVHomeBannerTableViewCell.self)
+        self.tableView.registerCellWith(cellClazz: LVHomeClassfyTableViewCell.self)
+        self.tableView.registerCellWith(cellClazz: LVVideoListTableViewCell.self)
+    }
+    private func loadData(){
+        self.bannerModel.getListRequest(successionHandler: { (response:[LVHomeBannerModel],ret) in
+            self.bannerList = response
+            self.tableView.reloadSections([0], with: .none)
+        }) {
+            
+        }
+        self.videoListModel.getListRequest(successionHandler: { (response:[LVVideoListItem], ret) in
+            self.videoList = response
+            self.tableView.reloadSections([2], with: .none)
+        }) {
+            
+        }
+        self.catagrayModel.getListRequest(successionHandler: { (response:[LVCatagrayItem], ret) in
+            self.catagrayList = response
+            self.tableView.reloadSections([1], with: .none)
+            self.tableView.switchRefreshHeader(to: .normal(.success, 0.3))
+        }) {
+            
+        }
+    }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        if indexPath.section == 2 {
+            let vc = LVVideoPlayViewController()
+            vc.currentVideo = self.videoList[indexPath.row]
+            vc.hidesBottomBarWhenPushed = true
+            self.navigationController?.pushViewController(vc, animated: true)
+        }
+    }
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if indexPath.section == 0 {
+            let cell = LVHomeBannerTableViewCell.cellWithTableView(tableView: tableView) as! LVHomeBannerTableViewCell
+            cell.setDatas(datas: self.bannerList)
+            cell.bannerSelectAtIndex = {[weak self] (index) in
+                let item = self?.bannerList[index]
+                self?.jumpViewControllerWithItem(item: item!)
+            }
+            return cell
+        }else if indexPath.section == 1{
+            let cell = LVHomeClassfyTableViewCell.cellWithTableView(tableView: tableView) as! LVHomeClassfyTableViewCell
+            cell.setDatas(datas: self.catagrayList)
+            return cell
+        }else{
+            let cell = LVVideoListTableViewCell.cellWithTableView(tableView: tableView) as! LVVideoListTableViewCell
+            cell.setVideo(video: self.videoList[indexPath.row])
+            return cell
+        }
+    }
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let header = LVTableViewNormalHeader.init(frame: CGRect(x: 0, y: 0, width: kScreenWidth, height: 44), title: headerTitles[section],subTitle: "更多", isShowArrow: false, moreActionHandler:{
+            debugPrint("点击了更多按钮")
+        })
+        return header
+    }
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return section == 0 ? 0 : 44
+    }
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 3
+    }
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if section == 0 || section == 1 {
+            return 1
+        }else{
+            return self.videoList.count
+        }
+    }
+}
+extension LVHomeViewController{
+    func jumpViewControllerWithItem(item: LVHomeBannerModel){
+        switch item.bannerType {
+        case 2:
+            videoDetail.videoId = item.bannerPath
+            TBTHUD.showLoading()
+            //请求视频详情
+            videoDetail.getBeenRequest(successionHandler: {[weak self] (response: LVVideoListItem) in
+                let vc = LVVideoPlayViewController()
+                vc.currentVideo = response
+                vc.hidesBottomBarWhenPushed = true
+                self?.navigationController?.pushViewController(vc, animated: true)
+            }) {
+                
+            }
+            break;
+        case 3:
+            let vc = WKWebViewViewController()
+            vc.url = item.bannerPath
+            vc.hidesBottomBarWhenPushed = true
+            self.navigationController?.pushViewController(vc, animated: true)
+            break
+        default:
+            break
+        }
+    }
+}

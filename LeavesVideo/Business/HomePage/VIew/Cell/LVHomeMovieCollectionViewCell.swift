@@ -1,0 +1,83 @@
+//
+//  LVHomeMovieCollectionViewCell.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/11/7.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import UIKit
+class LVHomeMovieCollectionViewCell: UICollectionViewCell {
+    
+    private lazy var coverImageView: UIImageView = {
+        let imageView = UIImageView.init()
+        imageView.layer.cornerRadius = 3
+        imageView.layer.masksToBounds = true
+        imageView.backgroundColor = UIColor(hex: "999999")
+        
+        return imageView
+    }()
+    
+    private lazy var titleLable: UILabel = {
+        let lab = UILabel.init()
+        lab.font = XDFont.pingFangSCRegular.ofSize(size: 14.0)
+        lab.textColor = textBlackColor
+        lab.text = "蝙蝠侠大战超人"
+        lab.sizeToFit()
+        return lab
+    }()
+    
+    private lazy var subTitleLable: UILabel = {
+        let lab = UILabel.init()
+        lab.font = XDFont.pingFangSCRegular.ofSize(size: 14.0)
+        lab.textColor = textLightGrayColor
+        lab.text = "韦恩少爷隐退之作，随后就去吸毒了."
+        lab.sizeToFit()
+        return lab
+    }()
+    
+    private lazy var playCountLable: UILabel = {
+        let lab = UILabel.init()
+        lab.font = XDFont.pingFangSCRegular.ofSize(size: 10.0)
+        lab.textColor = UIColor.white
+        lab.text = "1.4万次播放"
+        lab.sizeToFit()
+        return lab
+    }()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        self.addViews()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func addViews(){
+        self.addSubview(self.coverImageView)
+        self.addSubview(self.titleLable)
+        self.addSubview(self.subTitleLable)
+        self.coverImageView.addSubview(self.playCountLable)
+        self.coverImageView.snp.makeConstraints{(make) in
+            make.top.equalTo(self.snp.top)
+            make.left.equalTo(self.snp.left)
+            make.right.equalTo(self.snp.right)
+            make.bottom.equalTo(self.snp.bottom).offset(-45)
+        }
+        self.titleLable.snp.makeConstraints{(make) in
+            make.top.equalTo(self.coverImageView.snp.bottom).offset(5)
+            make.left.equalTo(self.snp.left)
+            make.right.equalTo(self.snp.right)
+        }
+        self.subTitleLable.snp.makeConstraints{(make) in
+            make.top.equalTo(self.titleLable.snp.bottom).offset(3)
+            make.left.equalTo(self.snp.left)
+            make.right.equalTo(self.snp.right)
+        }
+        self.playCountLable.snp.makeConstraints{(make) in
+            make.bottom.equalTo(self.coverImageView.snp.bottom).offset(-8)
+            make.right.equalTo(self.coverImageView.snp.right).offset(-7)
+        }
+    }
+}

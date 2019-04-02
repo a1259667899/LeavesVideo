@@ -1,0 +1,164 @@
+//
+//  LVMineHeaderTableViewCell.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/18.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import UIKit
+
+class LVMineHeaderTableViewCell: UITableViewCell {
+    private lazy var headerIcon:UIImageView = {
+        let imageView = UIImageView.init()
+        imageView.backgroundColor = UIColor.white
+        imageView.layer.cornerRadius = 22
+        imageView.layer.masksToBounds = true
+        imageView.image = UIImage(named: "mine_header")
+        imageView.isUserInteractionEnabled = true
+        return imageView
+    }()
+    private lazy var nameLabel:UILabel = {
+        let lable = UILabel()
+        lable.font = XDFont.pingFangSCRegular.ofSize(size: 16.0)
+        lable.text = "请登录"
+        lable.textColor = UIColor.white
+        lable.isUserInteractionEnabled = true
+        return lable
+    }()
+    //    private lazy var downLoadCountButton:MineLeftImgRightTextButton = {
+    //        let button = MineLeftImgRightTextButton()
+    //        button.setAttributedTitle(NSAttributedString.init(string: "下载次数:0", attributes: [NSAttributedString.Key.font:XDFont.pingFangSCRegular.ofSize(size: 14.0)!,NSAttributedString.Key.foregroundColor:UIColor.white]), for: .normal)
+    //        button.setImage(UIImage(named: "mine_downloadWihte"), for: .normal)
+    //        return button
+    //    }()
+    //    private lazy var playCountButton:MineLeftImgRightTextButton = {
+    //        let button = MineLeftImgRightTextButton()
+    //        button.setAttributedTitle(NSAttributedString.init(string: "播放次数:0", attributes: [NSAttributedString.Key.font:XDFont.pingFangSCRegular.ofSize(size: 14.0)!,NSAttributedString.Key.foregroundColor:UIColor.white]), for: .normal)
+    //        button.setImage(UIImage(named: "mine_playingWhite"), for: .normal)
+    //        return button
+    //    }()
+    //    private lazy var seapreLine:UIView = {
+    //        let view = UIView.init()
+    //        view.backgroundColor = UIColor.white
+    //        return view
+    //    }()
+    private lazy var downLoadCountLable: UILabel = {
+        let lab = UILabel.init()
+        lab.sizeToFit()
+        lab.textAlignment = .center
+        lab.layer.cornerRadius = 10
+        lab.layer.masksToBounds = true
+        lab.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.2)
+        return lab
+    }()
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        self.addSubViews()
+        self.selectionStyle = .none
+        NotificationCenter.default.addObserver(self, selector: #selector(updateUI), name: NotifyLogin, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateUI), name: NotifyLogOut, object: nil)
+    }
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: NotifyLogin, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NotifyLogOut, object: nil)
+    }
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    private func addSubViews(){
+        //设置背景色
+        self.layer.addSublayer(UIColor.layerOfGradualChangingColor(bounds: CGRect(x: 0, y: 0, width: kScreenWidth, height: is_iPhoneX ? 124 + 24 : 124), fromColor: "#4481EB", toColor: "#04BEFE"))
+        self.addSubview(self.headerIcon)
+        self.addSubview(self.nameLabel)
+        self.addSubview(self.downLoadCountLable)
+        //        self.addSubview(self.downLoadCountButton)
+        //        self.addSubview(self.playCountButton)
+        //        self.addSubview(self.seapreLine)
+        self.headerIcon.snp.makeConstraints { (make) in
+            make.size.equalTo(CGSize(width: 45, height: 45))
+            make.left.equalTo(self.snp.left).offset(15)
+            make.top.equalTo(self.snp.top).offset(is_iPhoneX ? 50 + 20 : 50)
+        }
+        self.nameLabel.snp.makeConstraints { (make) in
+            make.centerY.equalTo(self.headerIcon.snp.centerY)
+            make.height.equalTo(50)
+            make.left.equalTo(self.headerIcon.snp.right).offset(15)
+        }
+        self.downLoadCountLable.snp.makeConstraints { (make) in
+            make.left.equalTo(self.nameLabel.snp.left)
+            make.width.equalTo(90)
+            make.bottom.equalTo(self.headerIcon.snp.bottom)
+        }
+        //        self.downLoadCountButton.snp.makeConstraints { (make) in
+        //            make.left.equalTo(self.snp.left)
+        //            make.top.equalTo(self.nameLabel.snp.bottom).offset(45)
+        //            make.width.equalTo(kScreenWidth/2)
+        //            make.height.equalTo(25)
+        //        }
+        //        self.playCountButton.snp.makeConstraints { (make) in
+        //            make.left.equalTo(kScreenWidth/2)
+        //            make.top.equalTo(self.nameLabel.snp.bottom).offset(45)
+        //            make.right.equalTo(self.snp.right)
+        //            make.height.equalTo(25)
+        //        }
+        //        self.seapreLine.snp.makeConstraints { (make) in
+        //            make.centerY.equalTo(self.downLoadCountButton.snp.centerY)
+        //            make.left.equalTo(self.downLoadCountButton.snp.right)
+        //            make.width.equalTo(1)
+        //            make.height.equalTo(20)
+        //        }
+        
+        let tapGesture = UITapGestureRecognizer.init(target: self, action: #selector(nameLableTaped))
+        self.nameLabel.addGestureRecognizer(tapGesture)
+        let headGesture = UITapGestureRecognizer.init(target: self, action: #selector(headIconTaped))
+        self.headerIcon.addGestureRecognizer(headGesture)
+        self.updateUI()
+    }
+    /**更新下载次数*/
+    public func updateDownLoadCount(count: Int){
+        let string = "下载次数:\(count)"
+        let attributeText = NSMutableAttributedString.init(string: string, attributes: [NSAttributedString.Key.font: XDFont.pingFangSCRegular.ofSize(size: 12.0)!, NSAttributedString.Key.foregroundColor: UIColor.white])
+        attributeText.addAttribute(NSAttributedString.Key.font, value: XDFont.pingFangSCRegular.ofSize(size: 15.0)!, range: NSRange.init(location: 5, length: string.count - 5))
+        self.downLoadCountLable.attributedText = attributeText
+    }
+    @objc private func updateUI(){
+        let loginStatus = UserUtil.isLogin()
+        if loginStatus {
+            let user = UserUtil.getCurrentUser()
+            //            self.headerIcon.setImageby_kf(imageUrl: user.icon!)
+            self.headerIcon.image = UIImage(named: "mine_header")
+            self.nameLabel.text = user.nickName
+        }else{
+            self.headerIcon.setImageby_kf(imageUrl:"", placeHolderName:"home_button_placeHolder")
+            self.nameLabel.text = "请登录"
+        }
+        self.downLoadCountLable.isHidden = !loginStatus
+    }
+    @objc private func nameLableTaped(){
+        if UserUtil.isLogin(){
+            //修改昵称
+            //            let vc = LVChangeNameViewController()
+            //            vc.originalNickName = UserUtil.getCurrentUser().nickName!
+            //            vc.hidesBottomBarWhenPushed = true
+            //            ViewControllerUtil.getCurrentViewController().navigationController?.pushViewController(vc, animated: true)
+        }else{
+            ViewControllerUtil.showLoginViewController()
+        }
+    }
+    @objc private func headIconTaped(){
+        nameLableTaped()
+        //        if UserUtil.isLogin() {
+        //            //修改头像
+        //
+        //        }else{
+        //            ViewControllerUtil.showLoginViewController()
+        //        }
+    }
+    override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+        
+        // Configure the view for the selected state
+    }
+    
+}

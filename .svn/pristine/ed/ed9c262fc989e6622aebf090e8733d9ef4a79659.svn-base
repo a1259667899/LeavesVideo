@@ -1,0 +1,36 @@
+//
+//  LVHomeAlertModel.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/31.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import Foundation
+import HandyJSON
+struct LVHomeAlertItem: HandyJSON {
+    var content = ""
+    var link = ""
+    var advertId = 2
+    init() {
+        
+    }
+}
+class LVHomeAlertModel: BaseModel{
+    override func setRequestUrl() -> String {
+        return "advert/notice"
+    }
+    override func setRequestBody() -> [String : Any] {
+        return [:]
+    }
+}
+class LVLaunchADModel: BaseModel{
+    override func setRequestUrl() -> String {
+        return "advert/ad"
+    }
+    override func setRequestBody() -> [String : Any] {
+        return [:]
+    }
+    
+    
+}

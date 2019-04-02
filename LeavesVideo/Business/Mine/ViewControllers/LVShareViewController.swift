@@ -1,0 +1,243 @@
+//
+//  LVShareViewController.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/22.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import UIKit
+import Photos
+import SKPhotoBrowser
+import EFQRCode
+class LVShareViewController: BaseViewController {
+    private lazy var shareModel: LVShareImageModel = {
+        return LVShareImageModel()
+    }()
+    //显示邀请上限的lable
+    private lazy var maxCoutLable:UILabel = {
+        let lable = UILabel.init()
+        lable.font = XDFont.pingFangSCRegular.ofSize(size: 14.0)
+        lable.textColor = UIColor(hexString: "#06BCFD")
+        lable.text = "剩余邀请次数50次"
+        return lable
+    }()
+    //显示邀请剩余次数的lable
+    private lazy var remainCoutLable:UILabel = {
+        let lable = UILabel.init()
+        lable.font = XDFont.pingFangSCRegular.ofSize(size: 12.0)
+        lable.textColor = UIColor(hexString: "#8B8B8B")
+        lable.text = "您的邀请码总次数50次"
+        return lable
+    }()
+    private lazy var pastButton:ExtendButton = {
+        let button = ExtendButton.init()
+        button.setAttributedTitle(NSAttributedString.init(string: "复制", attributes: [NSAttributedString.Key.font:XDFont.pingFangSCRegular.ofSize(size: 14.0)!,NSAttributedString.Key.foregroundColor:UIColor.white]), for: .normal)
+        button.setBackgroundImage(UIImage(named: "RectCircle_buttonBg"), for: .normal)
+        button.addTarget(self, action: #selector(pastText), for: .touchUpInside)
+        return button
+    }()
+    private lazy var contentScrollView:UIScrollView = {
+        let scrollView = UIScrollView.init(frame: CGRect(x: 0, y: 0, width: kScreenWidth, height: kScreenHeight - kNavibarH))
+        scrollView.showsVerticalScrollIndicator = false
+        return scrollView
+    }()
+    private lazy var rulesString:String = {
+        return "1.每成功邀请一位好友获得十次观看次数\n2.前二十名好友，可获得五次观看次数超过二十名可获得一次观看次数。"
+    }()
+    private lazy var inviteCodeLable:UILabel = {
+        let lable = UILabel.init()
+        lable.font = XDFont.pingFangSCSemibold.ofSize(size: 38.0)
+        lable.textColor = UIColor(hexString: "#4481EB")
+        lable.text = "ABCD12"
+        lable.sizeToFit()
+        return lable
+    }()
+    private lazy var QRCodeImageView:UIImageView = {
+        let imageView = UIImageView.init()
+        imageView.backgroundColor = UIColor.white
+        return imageView
+    }()
+    private lazy var ruleLable:UILabel = {
+        return UILabel.init()
+    }()
+    private lazy var bottomTextContent:UIView = {
+        return UIView.init()
+    }()
+    private lazy var contentBg:UIImageView = {
+        return UIImageView.init()
+    }()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.titleStr = "邀请好友"
+        let rightButtonItem = UIBarButtonItem.init(image: UIImage(named: "nav_share")?.withRenderingMode(.alwaysOriginal), style: .plain, target: self, action: #selector(rightBtnClcked))
+        self.navigationItem.rightBarButtonItem = rightButtonItem
+        self.loadData()
+    }
+    override func addSuViews() {
+        self.view.addSubview(self.contentScrollView)
+        self.contentScrollView.contentSize = CGSize(width: kScreenWidth, height: 700 * kWidthMultiper > self.view.height ? 700 * kWidthMultiper : self.view.height)
+        let genreLayer = UIColor.layerOfGradualChangingColor(bounds: CGRect(x: 0, y: 0, width: self.contentScrollView.contentSize.width, height: self.contentScrollView.contentSize.height), fromColor: "#4481EB", toColor: "#04BEFE")
+        self.contentScrollView.layer.addSublayer(genreLayer)
+        let titleImageView = UIImageView.init(frame: CGRect(x: kScreenWidth/2 - 43.5, y: 28, width: 87, height: 40))
+        titleImageView.image = UIImage(named: "share_titleIcon")
+        self.contentScrollView.addSubview(titleImageView)
+        titleImageView.snp.makeConstraints { (make) in
+            make.centerX.equalTo(self.contentScrollView.snp.centerX)
+            make.top.equalTo(self.contentScrollView.snp.top).offset(28)
+            make.size.equalTo(CGSize(width: 87, height: 40))
+        }
+        let desLabel = UILabel.init()
+        desLabel.font = XDFont.pingFangSCRegular.ofSize(size: 14.0)
+        desLabel.textColor = UIColor.white
+        desLabel.text = "新视频大门朝你开启"
+        desLabel.sizeToFit()
+        self.contentScrollView.addSubview(desLabel)
+        desLabel.snp.makeConstraints { (make) in
+            make.centerX.equalTo(self.view.snp.centerX)
+            make.height.equalTo(14)
+            make.top.equalTo(titleImageView.snp.bottom).offset(15)
+        }
+        contentBg.image = UIImage(named: "share_content_bg")
+        contentBg.isUserInteractionEnabled = true
+        self.contentScrollView.addSubview(contentBg)
+        contentBg.snp.makeConstraints { (make) in
+            make.centerX.equalTo(self.view.snp.centerX)
+            make.top.equalTo(desLabel.snp.bottom).offset(15)
+            make.size.equalTo(CGSize(width: 262 * kWidthMultiper, height: 380 * kWidthMultiper))
+        }
+        let inviteTitleLable = UILabel.init()
+        inviteTitleLable.font = XDFont.pingFangSCRegular.ofSize(size: 16.0)
+        inviteTitleLable.textColor = UIColor(hexString: "#4481EB")
+        inviteTitleLable.text = "您的邀请码"
+        inviteTitleLable.sizeToFit()
+        contentBg.addSubview(inviteTitleLable)
+        contentBg.addSubview(self.inviteCodeLable)
+        inviteTitleLable.snp.makeConstraints { (make) in
+            make.centerX.equalTo(contentBg.snp.centerX)
+            make.height.equalTo(15)
+            make.top.equalTo(contentBg.snp.top).offset(21)
+        }
+        inviteCodeLable.snp.makeConstraints { (make) in
+            make.centerX.equalTo(contentBg.snp.centerX)
+            
+            make.top.equalTo(inviteTitleLable.snp.bottom).offset(10)
+        }
+        
+        contentBg.addSubview(pastButton)
+        pastButton.snp.makeConstraints { (make) in
+            make.size.equalTo(CGSize(width: 55, height: 18))
+            make.centerX.equalTo(contentBg.snp.centerX)
+            make.top.equalTo(self.inviteCodeLable.snp.bottom).offset(5 * kWidthMultiper)
+        }
+        contentBg.addSubview(self.maxCoutLable)
+        self.maxCoutLable.snp.makeConstraints { (make) in
+            make.centerX.equalTo(contentBg.snp.centerX)
+            make.top.equalTo(pastButton.snp.bottom).offset(15 * kWidthMultiper)
+            make.height.equalTo(14)
+        }
+        contentBg.addSubview(self.remainCoutLable)
+        self.remainCoutLable.snp.makeConstraints { (make) in
+            make.centerX.equalTo(contentBg.snp.centerX)
+            make.top.equalTo(maxCoutLable.snp.bottom).offset(11 * kWidthMultiper)
+            make.height.equalTo(12)
+        }
+        //虚线
+        let viewXU = UIView.init(frame: CGRect.init(x: 27 , y: 186 * kWidthMultiper, width: kScreenWidth - 84 * kWidthMultiper * 2, height: 1.0))
+        viewXU.drawLineOfDash(lineLength: 1, lineSpecing: 1, lingColor: UIColor(hexString: "#8B8B8B")!, isHorizonal: true)
+        contentBg.addSubview(viewXU)
+        contentBg.addSubview(self.QRCodeImageView)
+        self.QRCodeImageView.snp.makeConstraints { (make) in
+            make.size.equalTo(CGSize(width: 135 * kWidthMultiper, height: 135 * kWidthMultiper))
+            make.centerX.equalTo(contentBg.snp.centerX)
+            make.top.equalTo(contentBg.snp.top).offset(202 * kWidthMultiper)
+        }
+        let lable = UILabel.init()
+        lable.font = XDFont.pingFangSCRegular.ofSize(size: 14.0)
+        lable.textColor = UIColor(hexString: "#8B8B8B")
+        lable.text = "扫码下载落叶视频APP"
+        lable.sizeToFit()
+        contentBg.addSubview(lable)
+        lable.snp.makeConstraints { (make) in
+            make.centerX.equalTo(contentBg.snp.centerX)
+            make.top.equalTo(self.QRCodeImageView.snp.bottom).offset(13)
+        }
+        //底部文字区域
+        bottomTextContent.backgroundColor = UIColor.white
+        bottomTextContent.layer.cornerRadius = 5
+        bottomTextContent.layer.masksToBounds = true
+        self.contentScrollView.addSubview(bottomTextContent)
+        let realHeight = self.rulesString.caculateHeight(font: XDFont.pingFangSCRegular.ofSize(size: 14.0)!, width: kScreenWidth - 71 * 2 * kWidthMultiper) + 10
+        bottomTextContent.snp.makeConstraints { (make) in
+            make.centerX.equalTo(self.view.snp.centerX)
+            make.top.equalTo(contentBg.snp.bottom).offset(20 * kHeightMultiper)
+            make.size.equalTo(CGSize(width: 263 * kWidthMultiper, height: realHeight + 76))
+        }
+        let bottomTitleLable = UILabel.init(frame: CGRect(x:0 , y: 17, width: 263 * kWidthMultiper, height: 16))
+        bottomTitleLable.font = XDFont.pingFangSCRegular.ofSize(size: 16.0)
+        bottomTitleLable.textColor = textBlackColor
+        bottomTitleLable.text = "奖励规则"
+        bottomTitleLable.textAlignment = .center
+        bottomTextContent.addSubview(bottomTitleLable)
+        
+        
+        ruleLable.numberOfLines = 0
+        ruleLable.font = XDFont.pingFangSCRegular.ofSize(size: 14.0)
+        ruleLable.textColor = textBlackColor
+        bottomTextContent.addSubview(ruleLable)
+        ruleLable.text = rulesString
+        ruleLable.snp.makeConstraints { (make) in
+            make.height.equalTo(realHeight)
+            make.top.equalTo(bottomTitleLable.snp.bottom).offset(15)
+            make.left.equalTo(bottomTextContent.snp.left).offset(14)
+            make.right.equalTo(bottomTextContent.snp.right).offset(-14)
+        }
+    }
+    override func rightBtnClcked() {
+        self.pastButton.isHidden = true
+        self.bottomTextContent.isHidden = true
+        self.shareImage = self.contentScrollView.getScreenShoot()
+        self.pastButton.isHidden = false
+        self.bottomTextContent.isHidden = false
+        self.doShareAction()
+    }
+    private func loadData(){
+        TBTHUD.showLoading()
+        self.shareModel.getBeenRequest(successionHandler: {[weak self] (response:LVShareItem) in
+            self?.maxCoutLable.text = "您的邀请码总次数\(response.allInviteNum)次"
+            self?.remainCoutLable.text = "剩余邀请次数\(response.inviteNum)次"
+            self?.inviteCodeLable.text = response.inviteCode
+             self?.QRCodeImageView.image = UIImage(cgImage: EFQRCode.generate(content: response.qrCodeUrl)!)
+            var rulesArr:[String] = []
+            for (index,value) in response.rewardRules.enumerated(){
+                rulesArr.append("\(index + 1)." + value)
+            }
+            self!.rulesString = response.rewardRules.count > 1 ? rulesArr.joined(separator: "\n") : response.rewardRules.joined(separator: "")
+            let realHeight = self!.rulesString.caculateHeight(font: XDFont.pingFangSCRegular.ofSize(size: 14.0)!, width: kScreenWidth - 71 * 2 * kWidthMultiper) + 10
+            self!.bottomTextContent.snp.updateConstraints { (make) in
+                make.size.equalTo(CGSize(width: 263 * kWidthMultiper, height: realHeight + 76))
+            }
+            self!.ruleLable.text = self!.rulesString
+            self!.ruleLable.snp.updateConstraints { (make) in
+                make.height.equalTo(realHeight)
+            }
+        }) {
+            
+        }
+    }
+    @objc private func pastText(){
+        UIPasteboard.general.string = self.inviteCodeLable.text
+        TBTHUD.showSuccessMessage(message: "邀请码已复制到剪切板")
+    }
+    
+    /*
+    // MARK: - Navigation
+
+    // In a storyboard-based application, you will often want to do a little preparation before navigation
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        // Get the new view controller using segue.destination.
+        // Pass the selected object to the new view controller.
+    }
+    */
+
+}

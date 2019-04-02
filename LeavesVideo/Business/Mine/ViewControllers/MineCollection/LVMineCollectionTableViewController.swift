@@ -1,0 +1,219 @@
+//
+//  LVMineCollectionTableViewController.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/19.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import UIKit
+import PullToRefreshKit
+class LVMineCollectionTableViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource{
+    //是否全选
+    private var ischeckAll = false
+    private lazy var cellViewModels: [LVMineCollectionCellViewModel] = {
+        return []
+    }()
+    /**页面的viewModel*/
+    private lazy var viewModel:LVVideoCollectionViewModel = {
+        return LVVideoCollectionViewModel()
+    }()
+    private lazy var bottomView:LVMineDownloadBottomView = {
+        let view = LVMineDownloadBottomView.init(frame: CGRect.zero)
+        view.allCheckClouser = {[weak self] in
+            self?.selectAll()
+        }
+        view.deleteClouser = {[weak self] in
+            self?.deleteSelectedDatas()
+        }
+        self.view.addSubview(view)
+        return view
+    }()
+    private lazy var tableView:UITableView = {
+        let table = UITableView.init()
+        table.delegate = self
+        table.dataSource = self
+        table.separatorStyle = .none
+        table.tableFooterView = UIView.init()
+        table.configRefreshFooter(container: self, action: {[weak self] in
+            self?.loadNextPage()
+        })
+        table.configRefreshHeader(container: self, action: {[weak self] in
+            self?.loadFirstPage()
+        })
+        return table
+    }()
+    private lazy var selectedItems:[LVVideoListModel] = []
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.titleStr = "我的收藏"
+        TBTHUD.showLoading()
+        self.loadNextPage()
+        addSubViews()
+    }
+    func addSubViews() {
+        let button = ExtendButton.init(frame: CGRect(x: 0, y: 0, width: 28, height: 50))
+        button.setAttributedTitle(NSAttributedString.init(string: "编辑", attributes: [NSAttributedString.Key.font:XDFont.pingFangSCRegular.ofSize(size: 14.0)!,NSAttributedString.Key.foregroundColor:UIColor(hexString: "#181818")!]), for: .normal)
+        button.setAttributedTitle(NSAttributedString.init(string: "取消", attributes: [NSAttributedString.Key.font:XDFont.pingFangSCRegular.ofSize(size: 14.0)!,NSAttributedString.Key.foregroundColor:textBlackColor!]), for: .selected)
+        button.addTarget(self, action: #selector(editButtonClicked(sender:)), for: .touchUpInside)
+        let rightItem = UIBarButtonItem.init(customView: button)
+        self.navigationItem.rightBarButtonItem = rightItem
+        self.view.addSubview(self.tableView)
+        self.tableView.snp.makeConstraints { (make) in
+            make.edges.equalTo(UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0))
+        }
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 50 + kSafeAreaBottomH, right: 0)
+        tableView.allowsMultipleSelectionDuringEditing = true
+        self.tableView.registerCellWith(cellClazz: LVMineCollectionTableViewCell.self)
+    }
+   
+    private func loadNextPage(){
+        self.viewModel.loadNextPage(successHandler: {[weak self] (response, islast)  in
+            self?.cellViewModels = (self?.viewModel.videos)!
+            if islast{
+                self?.tableView.switchRefreshFooter(to: .noMoreData)
+            }
+            self!.tableView.reloadData()
+        }) {
+            
+        }
+    }
+    private func loadFirstPage(){
+        self.viewModel.loadFirstPage(successHandler: {[weak self] (response) in
+            self?.cellViewModels = (self?.viewModel.videos)!
+            self!.tableView.reloadData()
+        }) {
+            
+        }
+    }
+    //编辑按钮
+    @objc private func editButtonClicked(sender: UIButton){
+        sender.isSelected = !sender.isSelected
+        self.tableView.setEditing(sender.isSelected, animated: true)
+        if sender.isSelected == true {
+            self.bottomView.showOn(view: self.view)
+        }else{
+            self.bottomView.hideOn(view: self.view)
+        }
+    }
+    // MARK: - Table view data source
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+
+        return 1
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.cellViewModels.count
+    }
+
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = LVMineCollectionTableViewCell.cellWithTableView(tableView: tableView) as! LVMineCollectionTableViewCell
+        cell.setVideoItem(item: self.cellViewModels[indexPath.row])
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if !self.tableView.isEditing {
+            tableView.deselectRow(at: indexPath, animated: true)
+            //请求播放地址
+            TBTHUD.showLoading()
+            let model = LVVideoPlayPathModel()
+            model.videoId = self.cellViewModels[indexPath.row].videoId
+            model.getBeenRequest(successionHandler: { (response: LVVideoListModel) in
+                let vc = HJVideoPlayerController.init()
+                vc.configModel.onlyFullScreen = true
+                vc.url = response.videoUrl
+                self.navigationController?.pushViewController(vc, animated: true)
+            }) {
+
+            }
+        }else {
+
+            self.selectedItems.append(self.cellViewModels[indexPath.row].videoItem!)
+
+        }
+    }
+    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+        if self.tableView.isEditing == true {
+
+            let objc = self.cellViewModels[indexPath.row].videoItem
+            for (index, item) in selectedItems.enumerated(){
+                if item.videoId == objc!.videoId{
+                    self.selectedItems.remove(at: index)
+                    break
+                }
+            }
+        }
+
+    }
+    // Override to support conditional editing of the table view.
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+
+        return true
+    }
+
+    func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+        let type = UITableViewCell.EditingStyle.delete.rawValue | UITableViewCell.EditingStyle.insert.rawValue
+
+        return UITableViewCell.EditingStyle(rawValue: type)!
+    }
+    // Override to support editing the table view.
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            // Delete the row from the data source
+            tableView.deleteRows(at: [indexPath], with: .fade)
+        } else if editingStyle == .insert {
+            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+        }
+    }
+
+    func tableView(_ tableView: UITableView, shouldIndentWhileEditingRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    /**获取当前e页面的编辑状态*/
+    func isEditing()-> Bool{
+        return self.tableView.isEditing
+    }
+
+}
+//
+extension LVMineCollectionTableViewController{
+    func selectAll(){
+        self.selectedItems.removeAll()
+        if self.ischeckAll == false{
+            for i in 0..<self.cellViewModels.count{
+                self.selectedItems.append(self.cellViewModels[i].videoItem!)
+                self.tableView.selectRow(at: IndexPath.init(row: i, section: 0), animated: true, scrollPosition: .top)
+                self.ischeckAll = true
+            }
+        }else{
+            for i in 0..<self.cellViewModels.count{
+                self.tableView.deselectRow(at: IndexPath.init(row: i, section: 0), animated: true)
+                self.ischeckAll = false
+            }
+        }
+    }
+    func deleteSelectedDatas(){
+        if self.selectedItems.isEmpty {
+            TBTHUD.showErrorMessage(message: "请选择项目")
+            return
+        }
+        PopViewUtil.alert(message: "确定要取消收藏吗", leftTitle: "确定", rightTitle: "再想想", leftHandler: {
+            TBTHUD.showLoading()
+            self.viewModel.cancleCollectionsWithVideos(videos: self.selectedItems, successHandler: {[weak self] in
+                TBTHUD.showLoading()
+                //再请求一遍数据
+                self!.loadFirstPage()
+                self?.tableView.reloadData()
+            }, failHandler: {
+                
+            })
+           
+        }) {
+
+        }
+    }
+    
+}

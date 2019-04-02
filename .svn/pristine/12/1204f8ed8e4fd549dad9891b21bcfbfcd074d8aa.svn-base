@@ -1,0 +1,32 @@
+//
+//  LVHomeBannerModel.swift
+//  LeavesVideo
+//
+//  Created by Sinder on 2018/10/22.
+//  Copyright © 2018 Sinder. All rights reserved.
+//
+
+import Foundation
+import HandyJSON
+struct LVHomeBannerItem: HandyJSON{
+    var bannerId = ""
+    var bannerIcon = ""
+    /**为2，跳转视频播放页*/
+    var bannerType = 2
+    /**bannerType = 2,该字段是视频id*/
+    var bannerPath = ""
+    var startTime = ""
+    var endTime = ""
+    var updateTime = ""
+}
+class LVHomeBannerModel : BaseModel{
+    
+    override func setRequestUrl() -> String {
+        return "banner/list"
+    }
+    override func setRequestBody() -> [String : Any] {
+        return [:]
+    }
+    
+    
+}
